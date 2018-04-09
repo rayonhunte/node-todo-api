@@ -4,12 +4,16 @@
   "description": "a to do node api",
   "main": "index.js",
   "scripts": {
+    "start": "node server/server.js",
     "test": "mocha server/**/**/*.test.js",
     "test-watch": "nodemon --exec 'npm test'"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rayonhunte/node-todo-api.git"
+  },
+  "engines":{
+    "node":"9.4.0"
   },
   "keywords": [
     "node",
