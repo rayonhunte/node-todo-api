@@ -1,5 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const _ = require('lodash');
+
 
 const {mongoose} = require('./db/mongoode');
 const {ObjectId} = require('mongodb');
@@ -50,16 +52,39 @@ app.get('/todos/:id', (req, res) =>{
 
 app.delete('/todos/:id', (req, res) =>{
   const todo = req.params.id
-  if(!ObjectId.isValid){
+  if(!ObjectId.isValid(todo)){
     return res.status(404).send({})
   }
-  Todo.findByIdAndRemove(todo).then((result)=>{
-    if(!result){
-      return res.status(404).send({})
+  Todo.findByIdAndRemove(todo).then((todo)=>{
+    if(!todo){
+      return res.status(404).send({todo})
     }
-    res.status(200).send(result)
+    res.status(200).send({todo})
   }).catch((e) =>{
-    res.status(400).send({});
+    res.status(400).send({err:e});
+  })
+})
+
+app.patch('/todos/:id', (req, res) =>{
+  const id = req.params.id;
+  const body = _.pick(req.body, ['text', 'completed'])
+  if(!ObjectId.isValid(id)){
+    return res.status(404).send({err:'invalid id'})
+  }
+
+  if(_.isBoolean(body.completed) && body.completed){
+    body.completedAt = new Date().getTime();
+  }else{
+    body.completed = false
+    body.completedAt = false
+  }
+  Todo.findByIdAndUpdate(id, {$set:body}, {new:true}).then((todo) =>{
+    if(!todo){
+      return res.status(404).send();
+    }
+    res.send({todo})
+  }).catch((e)=>{
+    res.status(400).send()
   })
 })
 
@@ -68,28 +93,3 @@ app.listen(port, ()=>{
 })
 
 module.exports = {app};
-
-
-// newUser = new User({
-//   email: 'rayon.hunte@gmail.com',
-//   password: 'Password'  
-// })
-// newUser.save().then((doc)=>{
-//   console.log(doc)
-// }, (e)=>{
-//   console.log(e)
-// })
-
-
-// newTodo = new Todo({
-//   text: 'write some code',
-//   completed: false,
-//   completedAt: Math.round(new Date() / 1000)
-// })
-
-// newTodo.save().then((doc)=>{
-//   console.log(doc)
-// }, (e)=>{
-//   console.log('Unable to save todo')
-// })
-
