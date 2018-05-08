@@ -5,25 +5,11 @@ const {Todo} = require('../models/todo');
 const {app} = require('../server');
 const {ObjectId} = require('mongodb');
 
+const {todos, populateTodos, users, populateUsers} = require('./seed/seed');
 
-const todos = [
-  {
-    _id: new ObjectId(),
-    text: 'First todo'
-  },
-  {
-    _id: new ObjectId(),
-    text: 'Second todo',
-    completed: true,
-    completedAt:33
-  }
-];
 
-beforeEach((done)=>{
-  Todo.remove({}).then(()=>{
-    return Todo.insertMany(todos);
-  }).then(()=> done());
-});
+beforeEach(populateUsers);
+beforeEach(populateTodos);
 
 describe('POST /todos', ()=>{
   it('should create a new todo', (done) =>{
@@ -168,6 +154,29 @@ describe('Delete todo by id', ()=>{
     request(app)
     .delete('/todos/1234')
     .expect(404)
+    .end(done);
+  });
+});
+
+
+console.log(users[0].tokens[0].token,'show gun');
+
+describe('GET /user/me', ()=>{
+  it('should return user if authenticated', (done)=>{
+    request(app)
+    .get('/user/me')
+    .set('x-auth', users[0].tokens[0].token)
+    .expect(200)
+    .expect((res)=>{
+      expect(res.body._id).toBe(users[0]._id.toHexString());
+      expect(res.body.email).toBe(users[0].email);
+    })
+    .end(done);
+  });
+  it('should provide a 401 if not authenticates', (done)=>{
+    request(app)
+    .get('/user/me')
+    .expect(401)
     .end(done);
   });
 });
