@@ -158,9 +158,6 @@ describe('Delete todo by id', ()=>{
   });
 });
 
-
-console.log(users[0].tokens[0].token,'show gun');
-
 describe('GET /user/me', ()=>{
   it('should return user if authenticated', (done) => {
     request(app)
@@ -228,4 +225,59 @@ describe('POST /users', ()=>{
     .end(done);
   });
 
+});
+
+describe('POST /user/login', () => {
+  it('it should login user and create token', (done)=>{
+   request(app)
+   .post('/users/login')
+   .send({
+     email: users[0].email,
+     password: users[0].password
+    })
+   .expect(200)
+   .expect((res)=>{
+    expect(res.headers['x-auth']).toBeTruthy();
+   }).end((err, res)=>{
+    if (err){
+      return done(err);
+    };
+    User.findById(users[0]._id).then((user)=>{
+      expect(user.tokens[0]).toHaveProperty(['access']);
+    done();
+    }).catch((err)=>{
+      done(err);
+    });
+   });
+  });
+  it('should reject invalid login', (done)=>{
+    request(app)
+    .post('/users/login')
+    .send({email: users[0].email, password:'12345678'})
+    .expect(401)
+    .end((err)=>{
+      if (err){
+        return done(err);
+      }
+      done();
+    });
+  });
+});
+
+describe('DELETE /users/token', ()=>{
+  it('should remove auth token on logout', (done)=>{
+    request(app)
+    .delete('/users/me/token')
+    .set('x-auth', users[0].tokens[0].token)
+    .expect(200)
+    .end((err, res)=>{
+      if (err){
+        return done(err);
+      }
+      User.findById(users[0]._id).then((user)=>{
+        expect(user.tokens.length).toBe(0);
+        done();
+      }).catch((err)=>done(err));
+    });
+  });
 });
